@@ -38,6 +38,10 @@ item_category              2                    14071            620918         
     在这里不存在一个item_id归属于多个category的现象，而对于一个item_id，可能;
     存在多item_geohash属性，这一现象标志了该物品可能存在不同的商品位置空间。而这些；
     存在item_geohash属性的物品总数为 620918 － 422858 个。
+
+step1：
+    将所有包含item_geohash的特征属性仅保留一个，其余全部清除，并且丢掉所有的item_geohash特征，使得；
+    我们的表格p变为(620918 ＊ 2)。并且保存在名为test的dataframe中。
 """
 """
 D;                     start/min               end/max           count          unique
@@ -45,6 +49,13 @@ user_id                  492                  142442955          23291027       
 item_id                  37                   404562488          23291027       4758484
 item_category            2                      14080            23291027       9557
 time
+注：由于step1中我们规定了先将所有含有地理标志的特征进行清除，所以在这边我们同样选择丢弃item_geohash特征；
+    经过数据整理，我们发现数据中总共有20000个用户信息，以及他们在不同时间段的行为操作。在数据中总共存在unique；
+    的item_id有4758484个，而我们涉及需要推荐的物品总数只有422858个。并且物品的item_category在表d中有唯一分类；
+    9557个，而推荐物品表p中仅有1054个。所以该表还需要进一步对数据进行探索处理，或进行相关数据清洗。
+
+探索步骤一：
+    
 ---------------
                          max              count         unique
 missing item_id          58               --
@@ -101,3 +112,5 @@ print(test.shape)
 test = test.drop_duplicates(['item_id'])
 print(test.shape)
 test.to_csv("test.csv",index = False)
+
+user.to_csv("test1.csv",index = False)
