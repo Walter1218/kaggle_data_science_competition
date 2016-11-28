@@ -11,6 +11,7 @@ item = pd.read_csv("fresh_comp_offline/tianchi_fresh_comp_train_item.csv")
 #print(item.head())
 user = pd.read_csv("fresh_comp_offline/tianchi_fresh_comp_train_user.csv")
 #print(user.head())
+file_path = "fresh_comp_offline/tianchi_fresh_comp_train_user_filtered.csv"
 """
 P:
 Item:(620918, 3)
@@ -39,9 +40,6 @@ item_category              2                    14071            620918         
     存在多item_geohash属性，这一现象标志了该物品可能存在不同的商品位置空间。而这些；
     存在item_geohash属性的物品总数为 620918 － 422858 个。
 
-step1：
-    将所有包含item_geohash的特征属性仅保留一个，其余全部清除，并且丢掉所有的item_geohash特征，使得；
-    我们的表格p变为(620918 ＊ 2)。并且保存在名为test的dataframe中。
 """
 """
 D;                     start/min               end/max           count          unique
@@ -54,7 +52,9 @@ time
     的item_id有4758484个，而我们涉及需要推荐的物品总数只有422858个。并且物品的item_category在表d中有唯一分类；
     9557个，而推荐物品表p中仅有1054个。所以该表还需要进一步对数据进行探索处理，或进行相关数据清洗。
 
-探索步骤一：
+new_user D:
+    "fresh_comp_offline/tianchi_fresh_comp_train_user_filtered.csv"
+    (2084859, 6)
     
 ---------------
                          max              count         unique
@@ -114,3 +114,37 @@ print(test.shape)
 test.to_csv("test.csv",index = False)
 
 user.to_csv("test1.csv",index = False)
+
+#preprocess for base model
+import numpy as np
+import time
+delimiter = ','
+def filter_data():
+    t0 = time.clock()
+    train_item = "fresh_comp_offline/tianchi_fresh_comp_train_item.csv"
+    train_user = "fresh_comp_offline/tianchi_fresh_comp_train_user.csv"
+    item_raw_file = open(train_item)    # item
+    user_raw_file = open(train_user)    # user
+    filtered_file_path = open(file_path, 'w')
+    item_set = set()
+    for item_raw_line in item_raw_file:
+        item_id = item_raw_line.split(delimiter)[0]
+        item_set.add(item_id)
+    for user_raw_line in user_raw_file:
+        item_id = user_raw_line.split(delimiter)[1]
+        # if not found in item list, then drop it
+        if item_id not in item_set:
+            continue
+        filtered_file_path.write(user_raw_line)
+    filtered_file_path.close()
+    user_raw_file.close()
+    item_raw_file.close()
+    print ("filter completed")
+    t1 = time.clock()
+    print(t1-t0)
+
+filter_data()
+filter_user_data = pd.read_csv(file_path)
+print(filter_user_data.shape)
+
+
