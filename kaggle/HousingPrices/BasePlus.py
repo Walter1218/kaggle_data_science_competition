@@ -4,6 +4,7 @@ The Base Model only use numeric data for prediction tasks,
 here, we will use all features to improve the results.
 Author: Walter Yoda
 Date:12/06/16
+# rmse score 0.13463
 """
 import pandas as pd
 import numpy as np
@@ -72,14 +73,66 @@ def feature_regression(data, thread = 0.7):
         regressor = DecisionTreeRegressor(random_state = 42)
         regressor.fit(X_train, y_train)
         score = regressor.score(X_test, y_test)
-        print(label,score)
+        #print(label,score)
         if(score >= thread):
+            print(label,score)
             selected_feature.append(label)
     return selected_feature
 
-def regression_target():
-    # TODO
-    return 0
+def feature_regression_within_drop(data, features, thread = 0.7):
+    #data = data.drop(features, axis = 1)
+    selected_features = []
+    for i in range(len(features)):
+        label = features[i]
+        explorer_log_label = data[label]
+        explorer_log_data = data.drop(features, axis =1)
+        X_train, X_test, y_train, y_test = train_test_split(explorer_log_data, explorer_log_label, test_size = 0.25, random_state = 42)
+        from sklearn.tree import DecisionTreeRegressor
+        regressor = DecisionTreeRegressor(random_state = 42)
+        regressor.fit(X_train, y_train)
+        score = regressor.score(X_test, y_test)
+        #print(label,score)
+        if(score >= thread):
+            print(label,score)
+            selected_features.append(label)
+    return selected_features
+
+def TukeyOutlier(data,label):
+    outlier = []
+    log_data = data
+    # for each single feature, find the outlier based on Turkey IQR theory
+    for feature in log_data.keys():
+        # 25th Q1
+        Q1 = np.percentile(log_data[feature],25)
+        # 75th Q3
+        Q3 = np.percentile(log_data[feature],75)
+        # Turkey IQR
+        step = (Q3 - Q1) * 1.5
+        # show outlier
+        print ("Data points considered outliers for the feature '{}':".format(feature))
+        #display(log_data[~((log_data[feature] >= Q1 - step) & (log_data[feature] <= Q3 + step))])
+        outlier.append(log_data[~((log_data[feature] >= Q1 - step) & (log_data[feature] <= Q3 + step))].index)
+    out = []
+    for i in range(len(outlier)):
+        for j in range(len(outlier[i])):
+            if outlier[i][j] not in out:
+                out.append(outlier[i][j])
+    print(len(out))
+    outliers  = out
+    # remove outlier
+    good_data = log_data.drop(log_data.index[outliers]).reset_index(drop = True)
+    good_label = label.drop(log_data.index[outliers]).reset_index(drop = True)
+    return good_data,good_label
+
+def regression_target(data,label,test):
+    dtrain = xgb.DMatrix(data, label)
+    dtest = xgb.DMatrix(test)
+    params = {"max_depth":6, "eta":0.1}
+    model = xgb.cv(params, dtrain,  num_boost_round=500, early_stopping_rounds=100)
+    model_xgb = xgb.XGBRegressor(n_estimators=360, max_depth=6, learning_rate=0.1) #the params were tuned using xgb.cv
+    model_xgb.fit(data, label)
+    xgb_preds = np.expm1(model_xgb.predict(test))
+    return xgb_preds
 
 train_file = "train.csv"
 test_file = "test.csv"
@@ -102,5 +155,12 @@ log_test = log_transform(n_test)
 # feature regression for all input training data
 selected_features = feature_regression(log_train)
 print(selected_features)
-new_log_train = log_train.drop(selected_features, axis = 1)
+selected_features2 = feature_regression_within_drop(log_train, selected_features)
+new_log_train = log_train.drop(selected_features2, axis = 1)
 print(new_log_train.shape)
+#good_data,good_label = TukeyOutlier(new_log_train,log_label)
+#print(good_data.shape,good_label.shape)
+new_log_test = log_test.drop(selected_features2, axis = 1)
+preds = regression_target(new_log_train, log_label, new_log_test)
+solution = pd.DataFrame({"Id":test.Id, "SalePrice":preds})
+solution.to_csv("fourth_sub.csv", index = False)
