@@ -4,4 +4,10 @@ Base Model: BaseModel.ipynb (Only use numeric features) Score: 0.22155
 
 First improvement Model: BasePlus.py (Using 72 features, here we drop 8 features) Score: 0.13463
 
-Second improvement Model: BasePlus2.py (UnderWorking)
+Second improvement Model: BasePlus2.py (Add Parameter Fitting function for xgboost training, I try max_depth =3 and 6.
+
+  The results shows as below:
+
+  RMSE: MAX_DEPTH:6: 0.13095
+  
+        MAX_DEPTH:3: 0.13031)
