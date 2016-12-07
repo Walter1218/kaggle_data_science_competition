@@ -8,6 +8,11 @@ Within outlier data remove(if the data in this feature is missing than 1/3, then
         Lasso Regression
 RMSE Score:
     with No Lasso : thread is 0.7 ,0.13024
+
+    Only Lasso, with no XGboost :
+                    thread is 0.7 ,
+
+    Combined Lasso and Xgboost :
                     thread is 0.7 ,
 """
 import pandas as pd
@@ -18,6 +23,7 @@ from scipy.stats import skew
 import pylab
 from sklearn.cross_validation import train_test_split
 from sklearn.cross_validation import KFold
+from sklearn.linear_model import Lasso
 from sklearn import preprocessing
 import xgboost as xgb
 import itertools
@@ -26,14 +32,14 @@ from operator import itemgetter
 def read_file(data_file_address):
     return pd.read_csv(data_file_address)
 
-# TODO
 # Outlier data remove, handle for missing data. the old methods used for missing data is just filling with median & frequent data
 # here we need change this method.
 def feature_encoder_split(data,test_length = 0):
     print(test_length[0])
     # data processing, filling & washing
     total_missing=data.isnull().sum()
-    to_delete=total_missing[total_missing>(1460/3.)]
+    num_of_data = data.shape[0]
+    to_delete=total_missing[total_missing>(num_of_data/3.)]
     print(to_delete)
     print(len(to_delete))
     print(to_delete.index.tolist())
@@ -53,7 +59,7 @@ def feature_encoder_split(data,test_length = 0):
     for feature in categorical_features:
         data[feature].fillna(data[feature].value_counts().idxmax(), inplace = True)
     total_missing=data.isnull().sum()
-    to_delete=total_missing[total_missing>(1460/3.)]
+    to_delete=total_missing[total_missing>(num_of_data/3.)]
     # Encode categorical features by using sklearn LabelEncoder function
     for feature in categorical_features:
         le = preprocessing.LabelEncoder()
@@ -77,7 +83,7 @@ def log_transform(data):
     log_data = np.log1p(data)
     return log_data
 
-def feature_regression(data, thread = 0.8):
+def feature_regression(data, thread = 0.7):
     numerical_features=data.select_dtypes(include=["float","int","bool"]).columns.values
     print(len(numerical_features))
     selected_feature = []
@@ -96,7 +102,7 @@ def feature_regression(data, thread = 0.8):
             selected_feature.append(label)
     return selected_feature
 
-def feature_regression_within_drop(data, features, thread = 0.8):
+def feature_regression_within_drop(data, features, thread = 0.7):
     #data = data.drop(features, axis = 1)
     selected_features = []
     for i in range(len(features)):
@@ -133,6 +139,8 @@ def TukeyOutlier(data,label,num_features):
         #display(log_data[~((log_data[feature] >= Q1 - step) & (log_data[feature] <= Q3 + step))])
         outlier.append(log_data[~((log_data[feature] >= Q1 - step) & (log_data[feature] <= Q3 + step))].index)
     out = []
+    # TODO
+    # change this outliers remove method to others, e.g. just remove by the frequent
     for i in range(len(outlier)):
         for j in range(len(outlier[i])):
             if outlier[i][j] not in out:
@@ -257,6 +265,7 @@ print(new_log_train.shape)
 new_log_test = log_test.drop(selected_features2, axis = 1)
 features_name = get_features(new_log_train)
 print(features_name)
+"""
 # list of parameters
 etas = [0.01]
 max_depths = [3]#3,6
@@ -268,5 +277,10 @@ n_folds=12
 target = 'SalePrice'
 print("start to find the best parameters for this model")
 final_prediction, mean_score = Parameters_Fitting(target, new_log_train,log_label,new_log_test,features_name,n_folds,etas,max_depths,boost_round,stopping_rounds,subsample = 1,test_size = 0.2)
+"""
+lasso = Lasso(alpha=0.0004)
+model = lasso
+model.fit(new_log_train, log_label)
+final_prediction = model.predict(new_log_test)
 solution = pd.DataFrame({"Id":test.Id, "SalePrice":np.exp(final_prediction)})
-solution.to_csv("eigth_sub.csv", index = False)
+solution.to_csv("ninth_sub.csv", index = False)
