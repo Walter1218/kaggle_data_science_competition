@@ -10,10 +10,10 @@ RMSE Score:
     with No Lasso : thread is 0.7 ,0.13024
 
     Only Lasso, with no XGboost :
-                    thread is 0.7 ,
+                    thread is 0.7 ,0.13108
 
-    Combined Lasso and Xgboost :
-                    thread is 0.7 ,
+    Combined Lasso and Xgboost :(half half)
+                    thread is 0.7 ,0.12435
 """
 import pandas as pd
 import numpy as np
@@ -265,7 +265,7 @@ print(new_log_train.shape)
 new_log_test = log_test.drop(selected_features2, axis = 1)
 features_name = get_features(new_log_train)
 print(features_name)
-"""
+#"""
 # list of parameters
 etas = [0.01]
 max_depths = [3]#3,6
@@ -276,11 +276,12 @@ stopping_rounds = 500
 n_folds=12
 target = 'SalePrice'
 print("start to find the best parameters for this model")
-final_prediction, mean_score = Parameters_Fitting(target, new_log_train,log_label,new_log_test,features_name,n_folds,etas,max_depths,boost_round,stopping_rounds,subsample = 1,test_size = 0.2)
-"""
+final_prediction_xgboost, mean_score_xgboost = Parameters_Fitting(target, new_log_train,log_label,new_log_test,features_name,n_folds,etas,max_depths,boost_round,stopping_rounds,subsample = 1,test_size = 0.2)
+#"""
 lasso = Lasso(alpha=0.0004)
 model = lasso
 model.fit(new_log_train, log_label)
-final_prediction = model.predict(new_log_test)
-solution = pd.DataFrame({"Id":test.Id, "SalePrice":np.exp(final_prediction)})
+final_prediction_lasso = model.predict(new_log_test)
+final_prediction = 0.50 * np.exp(final_prediction_xgboost) + 0.5 * np.exp(final_prediction_lasso)
+solution = pd.DataFrame({"Id":test.Id, "SalePrice":(final_prediction)})
 solution.to_csv("ninth_sub.csv", index = False)

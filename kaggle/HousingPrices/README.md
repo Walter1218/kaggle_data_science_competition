@@ -12,4 +12,17 @@ Second improvement Model: BasePlus2.py (Add Parameter Fitting function for xgboo
 
         MAX_DEPTH:3: 0.13031)
 
-4rd improvement Model: BasePlus3.py (underworking;with No Lasso is 0.13024)
+4rd improvement Model: BasePlus3.py (RMSE Score:
+  
+    with No Lasso : thread is 0.7 ,0.13024
+
+    Only Lasso, with no XGboost :
+                    thread is 0.7 ,0.13108
+
+    Combined Lasso and Xgboost :(half half)
+
+                    thread is 0.7 ,0.12435;
+
+    )
+
+  5th improvement Model: BasePlusS.py (underworking)
